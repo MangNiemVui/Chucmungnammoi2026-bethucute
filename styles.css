@@ -54,12 +54,13 @@ body::before{
 canvas#fx{
   position:fixed; inset:0; width:100vw; height:100vh;
   display:block; pointer-events:none;
-  z-index: 175000; /* above overlays so fireworks always visible */
+  /* Keep effects BEHIND login/modal content (không che mất phần login) */
+  z-index: 4;
 }
 
 .sparkles{
   position:fixed; inset:0;
-  z-index: 174900; /* under fireworks canvas */
+  z-index: 3; /* under fireworks canvas */
   background:
     radial-gradient(1.5px 1.5px at 22% 30%, rgba(255,255,255,.75) 40%, transparent 45%),
     radial-gradient(1.2px 1.2px at 62% 12%, rgba(255,255,255,.70) 40%, transparent 45%),
@@ -70,7 +71,7 @@ canvas#fx{
   pointer-events:none;
   filter: blur(.15px);
   mix-blend-mode: soft-light;
-  z-index: 6;
+  /* (đừng override z-index ở đây nữa) */
 }
 
 /* ===== Decorative: lanterns, clouds, petals ===== */
@@ -108,7 +109,7 @@ canvas#fx{
 @keyframes cloudMove1{ 0%{ transform: translateX(0); } 100%{ transform: translateX(130vw); } }
 @keyframes cloudMove2{ 0%{ transform: translateX(0) scaleX(-1); } 100%{ transform: translateX(-140vw) scaleX(-1); } }
 
-.petals{ position: fixed; inset:0; z-index: 175010; pointer-events:none; overflow:hidden; }
+.petals{ position: fixed; inset:0; z-index: 5; pointer-events:none; overflow:hidden; }
 .petal{
   position:absolute;
   width: 18px;
@@ -423,7 +424,18 @@ button:disabled{opacity:.55; cursor:not-allowed; transform:none; filter:none;}
   z-index: 50;
 }
 .menuHead{padding:10px;border-bottom:1px solid rgba(180,0,24,.12);background: rgba(255,243,222,.85)}
-.menuList{max-height: 260px; overflow:visible;}
+.menuList{
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: rgba(180,0,24,.35) rgba(255,243,222,.75);
+}
+
+.menuList::-webkit-scrollbar{ width: 10px; }
+.menuList::-webkit-scrollbar-track{ background: rgba(255,243,222,.75); }
+.menuList::-webkit-scrollbar-thumb{
+  background: rgba(180,0,24,.35);
+  border-radius: 999px;
+  border: 2px solid rgba(255,243,222,.75);
+}
 .item{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;}
 .item:hover{ background: rgba(255,204,77,.18); }
 .item .left{display:flex;flex-direction:column;gap:2px;}
@@ -719,4 +731,59 @@ button:disabled{opacity:.55; cursor:not-allowed; transform:none; filter:none;}
   color: rgba(43,21,0,.88);
   font-size: 13px;
   box-shadow: 0 10px 24px rgba(180,0,24,.14);
+}/* ==============================
+   FX 10s đầu mạnh → sau đó nhẹ
+   (KHÔNG ĐỤNG HTML / JS)
+   ============================== */
+
+/* ----- Pháo hoa ----- */
+canvas#fx{
+  opacity: 1;
+  animation: fxFadeOut 1.2s ease forwards;
+  animation-delay: 10s; /* Sau 10s bắt đầu mờ */
+  pointer-events: none;
+  z-index: 4; /* nằm dưới login */
+}
+
+@keyframes fxFadeOut{
+  to{
+    opacity: 0; /* tắt hẳn pháo hoa */
+  }
+}
+
+
+/* ----- Hoa đào ----- */
+.petals{
+  opacity: 1;
+  animation: petalsDim 1.5s ease forwards;
+  animation-delay: 10s; /* Sau 10s giảm độ rõ */
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes petalsDim{
+  to{
+    opacity: .25; /* mờ đi còn 25% */
+  }
+}
+
+/* Sau khi mờ: làm hoa nhỏ hơn và nhẹ hơn */
+.petal{
+  transition: transform 1.5s ease, opacity 1.5s ease;
+}
+
+.petals{
+  animation-fill-mode: forwards;
+}
+
+/* ----- Đảm bảo login luôn nổi trên ----- */
+.wrap{ z-index: 10; }
+.lock{ z-index: 13000; }
+.flow{ z-index: 12000; }
+
+/* Ẩn nút Quay lại trong màn lắc quẻ */
+.flow .rowActions #btnBack,
+.flow .rowActions .btnBack,
+.flow .rowActions [data-action="back"]{
+  display: none !important;
 }
