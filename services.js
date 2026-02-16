@@ -95,6 +95,26 @@ async function stopView(){
   viewSession = null;
 }
 
+
+async function recordFortune({ viewerKey, viewerLabel, amount, bankName, bankAccount }){
+  await initFirebaseIfNeeded();
+
+  try{
+    await addDoc(collection(db, "fortunes"), {
+      ownerKey: window.OWNER_KEY || "",
+      viewerKey, viewerLabel,
+      amount: Number(amount || 0),
+      bankName: String(bankName || ""),
+      bankAccount: String(bankAccount || ""),
+      createdAt: serverTimestamp()
+    });
+    return true;
+  }catch(e){
+    console.warn("Firestore recordFortune failed:", e);
+    return false;
+  }
+}
+
 async function getLatestViews(n=200){
   await initFirebaseIfNeeded();
   if (!isOwnerAuthed()) throw new Error("Not owner authed");
@@ -123,6 +143,21 @@ async function getLatestWishes(n=200){
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+
+async function getLatestFortunes(n=200){
+  await initFirebaseIfNeeded();
+  if (!isOwnerAuthed()) throw new Error("Not owner authed");
+
+  const q = query(
+    collection(db, "fortunes"),
+    orderBy("createdAt", "desc"),
+    limit(Math.min(500, n))
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 // ✅ Owner delete
 async function deleteView(docId){
   await initFirebaseIfNeeded();
@@ -136,6 +171,14 @@ async function deleteWish(docId){
   if (!isOwnerAuthed()) throw new Error("Not owner authed");
   if (!docId) throw new Error("Missing docId");
   await deleteDoc(doc(db, "wishes", String(docId)));
+
+async function deleteFortune(docId){
+  await initFirebaseIfNeeded();
+  if (!isOwnerAuthed()) throw new Error("Not owner authed");
+  if (!docId) throw new Error("Missing docId");
+  await deleteDoc(doc(db, "fortunes", String(docId)));
+}
+
 }
 
 // ✅ helper: init EmailJS compatible mọi version
@@ -216,7 +259,10 @@ window.AppServices = {
   stopView,
   getLatestViews,
   getLatestWishes,
+  getLatestFortunes,
+  recordFortune,
   deleteView,
   deleteWish,
+  deleteFortune,
   sendWish
 };

@@ -652,12 +652,38 @@ async function renderOwnerTab(){
           </div>
         </div>`).join('');
     }else{
-      const list = await window.AppServices.getLatestWishes(200);
+      const [wishList, fortuneList] = await Promise.all([
+        window.AppServices.getLatestWishes(200),
+        window.AppServices.getLatestFortunes ? window.AppServices.getLatestFortunes(200) : Promise.resolve([])
+      ]);
       const ownerKey = window.OWNER_KEY || '';
-      const filtered = list.filter(w => (w.ownerKey||'') === ownerKey);
-      if (!filtered.length){ ownerBody.textContent = 'Chưa có lời chúc nào.'; return; }
+      const wishes = wishList.filter(w => (w.ownerKey||'') === ownerKey);
+      const fortunes = (fortuneList || []).filter(f => (f.ownerKey||'') === ownerKey);
 
-      ownerBody.innerHTML = filtered.map(w => `
+      if (!wishes.length && !fortunes.length){ ownerBody.textContent = 'Chưa có lời chúc / bóc quẻ nào.'; return; }
+
+      const fortuneHtml = fortunes.length ? `
+        <div class="ownerRow" style="background:rgba(180,0,24,.05)">
+          <div class="ownerMeta"><span class="pillMini">🧧 Bóc quẻ (lộc tiền)</span> • tổng: <b>${fortunes.length}</b></div>
+          ${fortunes.map(f => `
+            <div style="padding:10px 0;border-top:1px dashed rgba(180,0,24,.18)">
+              <div class="ownerMeta">
+                <span class="pillMini">🧑 ${escapeHtml(f.viewerLabel || f.viewerKey || 'Ẩn danh')}</span>
+                trúng: <b>${escapeHtml(formatMoneyVND(f.amount || 0))}</b>
+                • ${escapeHtml(fmtTime(f.createdAt))}
+              </div>
+              ${(f.bankName || f.bankAccount) ? `
+                <div class="ownerMeta">🏦 ${escapeHtml(f.bankName || '')} • ${escapeHtml(f.bankAccount || '')}</div>
+              ` : ``}
+              <div class="row" style="justify-content:flex-end">
+                <button class="btnSecondary" type="button" data-del-fortune="${escapeHtml(f.id)}">🗑 Xoá</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const wishesHtml = wishes.length ? wishes.map(w => `
         <div class="ownerRow">
           <div class="ownerMeta">
             <span class="pillMini">💌 ${escapeHtml(w.viewerLabel || w.viewerKey || 'Ẩn danh')}</span>
@@ -668,7 +694,9 @@ async function renderOwnerTab(){
           <div class="row" style="justify-content:flex-end">
             <button class="btnSecondary" type="button" data-del-wish="${escapeHtml(w.id)}">🗑 Xoá</button>
           </div>
-        </div>`).join('');
+        </div>`).join('') : '<div class="ownerRow">Chưa có lời chúc.</div>';
+
+      ownerBody.innerHTML = fortuneHtml + wishesHtml;
     }
   }catch(e){
     console.warn(e);
@@ -683,7 +711,8 @@ async function renderOwnerTab(){
 ownerBody?.addEventListener('click', async (e) => {
   const bView = e.target.closest('[data-del-view]');
   const bWish = e.target.closest('[data-del-wish]');
-  if (!bView && !bWish) return;
+  const bFortune = e.target.closest('[data-del-fortune]');
+  if (!bView && !bWish && !bFortune) return;
 
   if (!isOwnerAuthed()){
     alert('Bạn chưa Owner Login.');
@@ -698,9 +727,12 @@ ownerBody?.addEventListener('click', async (e) => {
     if (bView){
       const id = bView.getAttribute('data-del-view');
       await window.AppServices.deleteView(id);
-    }else{
+    }else if (bWish){
       const id = bWish.getAttribute('data-del-wish');
       await window.AppServices.deleteWish(id);
+    }else{
+      const id = bFortune.getAttribute('data-del-fortune');
+      await window.AppServices.deleteFortune(id);
     }
     await renderOwnerTab();
   }catch(err){
@@ -1389,7 +1421,7 @@ btnWheelNext?.addEventListener('click', () => {
 
 btnFortuneBack?.addEventListener('click', () => showStage(stageWheel));
 
-btnShake?.addEventListener('click', () => {
+btnShake?.addEventListener('click', async () => {
   if (flowState.fortuneDone) return;
   const person = flowState.person;
 
@@ -1412,6 +1444,20 @@ btnShake?.addEventListener('click', () => {
 
   flowState.fortuneDone = true;
   btnFinish?.classList.remove('hidden');
+
+  // Lưu lịch sử bóc quẻ để Owner xem được ai trúng bao nhiêu
+  try{
+    await ensureServices();
+    await window.AppServices?.recordFortune?.({
+      viewerKey: person?.key || '',
+      viewerLabel: person?.label || person?.key || '',
+      amount: f.amount,
+      bankName: bn,
+      bankAccount: ba
+    });
+  }catch(err){
+    console.warn('recordFortune failed', err);
+  }
 
   burst(window.innerWidth*0.5, window.innerHeight*0.26, 160);
 });
