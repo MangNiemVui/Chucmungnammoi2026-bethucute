@@ -424,7 +424,18 @@ button:disabled{opacity:.55; cursor:not-allowed; transform:none; filter:none;}
   z-index: 50;
 }
 .menuHead{padding:10px;border-bottom:1px solid rgba(180,0,24,.12);background: rgba(255,243,222,.85)}
-.menuList{max-height: 260px; overflow:visible;}
+.menuList{
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: rgba(180,0,24,.35) rgba(255,243,222,.75);
+}
+
+.menuList::-webkit-scrollbar{ width: 10px; }
+.menuList::-webkit-scrollbar-track{ background: rgba(255,243,222,.75); }
+.menuList::-webkit-scrollbar-thumb{
+  background: rgba(180,0,24,.35);
+  border-radius: 999px;
+  border: 2px solid rgba(255,243,222,.75);
+}
 .item{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;}
 .item:hover{ background: rgba(255,204,77,.18); }
 .item .left{display:flex;flex-direction:column;gap:2px;}
