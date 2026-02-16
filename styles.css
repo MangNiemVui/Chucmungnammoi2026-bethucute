@@ -720,4 +720,53 @@ button:disabled{opacity:.55; cursor:not-allowed; transform:none; filter:none;}
   color: rgba(43,21,0,.88);
   font-size: 13px;
   box-shadow: 0 10px 24px rgba(180,0,24,.14);
+}/* ==============================
+   FX 10s đầu mạnh → sau đó nhẹ
+   (KHÔNG ĐỤNG HTML / JS)
+   ============================== */
+
+/* ----- Pháo hoa ----- */
+canvas#fx{
+  opacity: 1;
+  animation: fxFadeOut 1.2s ease forwards;
+  animation-delay: 10s; /* Sau 10s bắt đầu mờ */
+  pointer-events: none;
+  z-index: 4; /* nằm dưới login */
 }
+
+@keyframes fxFadeOut{
+  to{
+    opacity: 0; /* tắt hẳn pháo hoa */
+  }
+}
+
+
+/* ----- Hoa đào ----- */
+.petals{
+  opacity: 1;
+  animation: petalsDim 1.5s ease forwards;
+  animation-delay: 10s; /* Sau 10s giảm độ rõ */
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes petalsDim{
+  to{
+    opacity: .25; /* mờ đi còn 25% */
+  }
+}
+
+/* Sau khi mờ: làm hoa nhỏ hơn và nhẹ hơn */
+.petal{
+  transition: transform 1.5s ease, opacity 1.5s ease;
+}
+
+.petals{
+  animation-fill-mode: forwards;
+}
+
+/* ----- Đảm bảo login luôn nổi trên ----- */
+.wrap{ z-index: 10; }
+.lock{ z-index: 13000; }
+.flow{ z-index: 12000; }
+
