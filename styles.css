@@ -781,3 +781,9 @@ canvas#fx{
 .lock{ z-index: 13000; }
 .flow{ z-index: 12000; }
 
+/* Ẩn nút Quay lại trong màn lắc quẻ */
+.flow .rowActions #btnBack,
+.flow .rowActions .btnBack,
+.flow .rowActions [data-action="back"]{
+  display: none !important;
+}
